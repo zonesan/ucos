@@ -1,0 +1,367 @@
+#**************************************************************************
+#                  Copyright (c) 2005 vBridge Microsystem, Inc.
+#                       Unpublished & Not for Publication
+#                             All Rights Reserved
+#
+# File        :
+#
+# Description :
+#
+# Date        :
+#**************************************************************************
+
+#include ./Config
+CPL_LIB = Y
+
+# **********************************************
+# config the project
+# **********************************************
+
+# config compile tools
+#   sde or gcc
+
+TOOLCHAIN = gcc
+
+
+# endian mode
+#   EL - little endian
+#   EB - big endian
+
+ENDIAN    = EL
+
+
+IMAGENAME = vb_qualvideo
+# **********************************************
+#  system
+# **********************************************
+
+# Name of application; video or audio module include
+ifeq ($(SYSTYPE), TA1)
+IMAGENAME = audio_only_vb1100_donot_give_to_customers
+VBAUDIO = Y
+VBVIDEO = N
+VBDVR   = N
+endif
+
+ifeq ($(SYSTYPE), TA2)
+IMAGENAME = audio_only_vb2100_donot_give_to_customers
+VBAUDIO = Y
+VBVIDEO = N
+VBDVR   = N
+endif
+
+ifeq ($(SYSTYPE), VIDEO_ONLY)
+IMAGENAME = video_only_donot_give_to_customers
+VBAUDIO = N
+VBVIDEO = Y
+VBDVR   = N
+endif
+
+ifeq ($(SYSTYPE), VIDEO_AUDIO)
+IMAGENAME = video_audio_donot_give_to_customers
+VBAUDIO = Y
+VBVIDEO = Y
+VBDVR   = N
+endif
+
+ifeq ($(SYSTYPE), DVR)
+IMAGENAME = dvr_donot_give_to_customers
+VBAUDIO = Y
+VBVIDEO = Y
+VBDVR   = Y
+endif
+
+# **********************************************
+# compile tools
+# **********************************************
+
+ifeq ($(TOOLCHAIN),gcc)
+CC        = mipsel-linux-gcc
+LD        = mipsel-linux-ld
+OBJCOPY   = mipsel-linux-objcopy
+OBJDUMP   = mipsel-linux-objdump
+AR		  = mipsel-linux-ar
+endif
+
+ifeq ($(TOOLCHAIN),sde)
+CC        = sde-gcc
+LD        = sde-ld
+OBJCOPY   = sde-objcopy
+OBJDUMP   = sde-objdump
+AR		  = sde-ar
+endif
+
+# **********************************************
+# Endianness format
+# **********************************************
+ifeq ($(ENDIAN),EL)
+OFORMAT = elf32-tradlittlemips
+else
+OFORMAT = elf32-tradbigmips
+endif
+
+# **********************************************
+# Directories
+# **********************************************
+ROOT       = ./..
+
+SYS_SRCDIR :=   $(ROOT)/bsp \
+                $(ROOT)/lib \
+                $(ROOT)/port \
+                $(ROOT)/uCOS2.52 \
+                $(ROOT)/drivers \
+                $(ROOT)/drivers/uart_drivers
+
+APP_SRCDIR :=   $(ROOT)/application
+
+AUDIO_SRCDIR := $(ROOT)/G711
+#               $(ROOT)/LEC
+
+VIDEO_SRCDIR := $(ROOT)/mpeg_data \
+                $(ROOT)/video_data
+                
+DVR_SRCDIR   := $(ROOT)/application/video/techwell                           
+
+ifeq ($(VBAUDIO),Y)
+APP_SRCDIR += $(ROOT)/application/audio
+APP_SRCDIR += $(ROOT)/application/audio/w681388
+APP_SRCDIR += $(ROOT)/application/audio/si3210
+SRCDIR += $(AUDIO_SRCDIR)
+endif
+
+ifeq ($(VBVIDEO),Y)
+APP_SRCDIR += $(ROOT)/application/video $(ROOT)/mpeg $(ROOT)/video \
+              $(ROOT)/application/video/keypad_remote_control
+#             $(ROOT)/application/video/techwell 
+SRCDIR += $(VIDEO_SRCDIR)
+endif
+
+ifeq ($(VBDVR),Y)
+SRCDIR += $(DVR_SRCDIR)              
+endif
+
+SRCDIR += $(APP_SRCDIR) $(SYS_SRCDIR)
+
+BOOT_SRC := $(ROOT)/bsp/init.S
+#AUDIO_ONLY := $(ROOT)/drivers/audio.c
+CUSTOMER_SRC := $(ROOT)/drivers/iic.c $(ROOT)/drivers/printf.c $(ROOT)/drivers/comm.c
+
+INCDIR      = $(ROOT)/inc 
+LINKDIR     = $(ROOT)/output
+LSTDIR      = $(ROOT)/output
+VPATH       = $(SRCDIR)
+
+LIBFILE := vb_system.a
+
+ifeq ($(VBAUDIO),Y)
+LIBFILE += $(ROOT)/AEC/libAEC.a $(ROOT)/LEC/libLEC.a $(ROOT)/G726/libG726.a $(ROOT)/G729/libG729.a $(ROOT)/G723/libG723.a
+endif
+
+
+# **********************************************
+# Image file names and map file
+# **********************************************
+IMAGE_ELF = $(IMAGENAME).elf
+IMAGE_REC = $(IMAGENAME).rec
+IMAGE_RAW = $(IMAGENAME).raw
+IMAGE_TMP = $(IMAGENAME).tmp
+IMAGE_BIN = $(IMAGENAME).bin
+MAP       = $(IMAGENAME).map
+
+
+# **********************************************
+# Compiler and linker options
+# **********************************************
+INCLUDE =  -I$(ROOT)/lib -I$(ROOT)/inc \
+           -I$(ROOT)/uCOS2.52 -I$(ROOT)/uCOS\ Configure \
+           -I$(ROOT)/bsp -I$(ROOT)/port -I$(ROOT)/2risc\ platform \
+           -I$(ROOT)/drivers -I$(ROOT)/drivers/uart_drivers \
+           -I$(ROOT)/application \
+           -I$(ROOT)/application/audio -I$(ROOT)/application/video
+           #-I$(ROOT)/application/audio/w681388 -I$(ROOT)/application/audio/si3210 \
+           -I$(ROOT)/G711 -I$(ROOT)/G726 -I$(ROOT)/G729 \
+           -I$(ROOT)/ACE -I$(ROOT)/LEC \
+           -I$(ROOT)/mpeg -I$(ROOT)/mpeg_data \
+           -I$(ROOT)/video -I$(ROOT)/video_data
+
+
+ifeq ($(SYSTYPE), TA1)
+DEFINE  = -DVB_AUDIO -DSYSVB1100
+endif
+
+ifeq ($(SYSTYPE), TA2)
+DEFINE  = -DVB_AUDIO
+endif
+
+ifeq ($(SYSTYPE), VIDEO_ONLY)
+DEFINE  = -DVB_VIDEO
+endif
+
+ifeq ($(SYSTYPE), VIDEO_AUDIO)
+DEFINE  = -DVB_VIDEO -DVB_AUDIO
+endif
+
+ifeq ($(SYSTYPE), DVR)
+DEFINE  = -DVB_VIDEO -DVB_AUDIO -DVB_DVR
+endif
+
+W_OPTS    = -Wimplicit -Wformat
+CC_OPTS   = -g -c -O3 -$(ENDIAN) $(INCLUDE) -D$(ENDIAN) $(DEFINE) -mips32 -fno-builtin $(W_OPTS)
+AR_OPTS	  = rc
+
+
+ifeq ($(TOOLCHAIN),sde)
+CC_OPTS_A = $(CC_OPTS) -D_ASSEMBLER_ -D_SDE_
+else
+CC_OPTS_A = $(CC_OPTS) -D_ASSEMBLER_
+endif
+
+LD_SCRIPT = $(LINKDIR)/link.xn
+LD_OPTS   =  -g -T $(LD_SCRIPT) -o $(IMAGE_ELF) -Map $(MAP) --oformat $(OFORMAT)
+
+# **********************************************
+# Files to be compiled
+# **********************************************
+
+SYS_SRC_C   := $(foreach dir, $(SYS_SRCDIR),   $(wildcard $(dir)/*.c))
+APP_SRC_C   := $(foreach dir, $(APP_SRCDIR),   $(wildcard $(dir)/*.c))
+AUDIO_SRC_C := $(foreach dir, $(AUDIO_SRCDIR), $(wildcard $(dir)/*.c))
+VIDEO_SRC_C := $(foreach dir, $(VIDEO_SRCDIR), $(wildcard $(dir)/*.c))
+DVR_SRC_C   := $(foreach dir, $(DVR_SRCDIR),   $(wildcard $(dir)/*.c))
+
+SYS_SRC_S   := $(foreach dir, $(SYS_SRCDIR),   $(wildcard $(dir)/*.S))
+APP_SRC_S   := $(foreach dir, $(APP_SRCDIR),   $(wildcard $(dir)/*.S))
+AUDIO_SRC_S := $(foreach dir, $(AUDIO_SRCDIR), $(wildcard $(dir)/*.S))
+VIDEO_SRC_S := $(foreach dir, $(VIDEO_SRCDIR), $(wildcard $(dir)/*.S))
+DVR_SRC_S   := $(foreach dir, $(DVR_SRCDIR),   $(wildcard $(dir)/*.S))
+
+ifeq ($(VBAUDIO),Y)
+SRC_C  += $(AUDIO_SRC_C)
+SRC_S  += $(AUDIO_SRC_S)
+else
+SYS_SRC_C := $(filter-out $(AUDIO_ONLY), $(SYS_SRC_C))
+endif
+
+ifeq ($(VBVIDEO),Y)
+SRC_C += $(VIDEO_SRC_C)
+SRC_S += $(VIDEO_SRC_S)
+endif
+
+ifeq ($(VBDVR),Y)
+SRC_C += $(DVR_SRC_C)
+SRC_S += $(DVR_SRC_S)
+endif
+
+SRC_C  += $(SYS_SRC_C) $(APP_SRC_C)
+SRC_S  += $(SYS_SRC_S) $(APP_SRC_S)
+
+SRC    := $(SRC_C) $(SRC_S)
+
+OBJ_C  := $(notdir $(patsubst %.c, %.o, $(SRC_C)))
+OBJ_S  := $(notdir $(patsubst %.S, %.o, $(SRC_S)))
+OBJ    := $(OBJ_C) $(OBJ_S)
+
+LST_C  := $(notdir $(patsubst %.c, %.lst, $(SRC_C)))
+LST_S  := $(notdir $(patsubst %.S, %.lst, $(SRC_S)))
+LST    := $(LST_C) $(LST_S)
+
+
+SYS_LIB_OBJ   := $(notdir $(patsubst %.c, %.o, $(filter-out $(CUSTOMER_SRC), $(SYS_SRC_C)))) \
+                 $(notdir $(patsubst %.S, %.o, $(filter-out $(BOOT_SRC), $(SYS_SRC_S))))
+AUDIO_LIB_OBJ := $(notdir $(patsubst %.c, %.o, $(AUDIO_SRC_C))) \
+                 $(notdir $(patsubst %.S, %.o, $(AUDIO_SRC_S)))
+VIDEO_LIB_OBJ := $(notdir $(patsubst %.c, %.o, $(VIDEO_SRC_C))) \
+                 $(notdir $(patsubst %.S, %.o, $(VIDEO_SRC_S)))
+DVR_LIB_OBJ   := $(notdir $(patsubst %.c, %.o, $(DVR_SRC_C))) \
+                 $(notdir $(patsubst %.S, %.o, $(DVR_SRC_S)))
+
+VB_SYSTEM_LIB_OBJ := $(SYS_LIB_OBJ)
+
+ifeq ($(VBAUDIO),Y)
+VB_SYSTEM_LIB_OBJ += $(AUDIO_LIB_OBJ)
+endif
+
+ifeq ($(VBVIDEO),Y)
+VB_SYSTEM_LIB_OBJ += $(VIDEO_LIB_OBJ)
+endif
+
+ifeq ($(VBDVR),Y)
+VB_SYSTEM_LIB_OBJ += $(DVR_LIB_OBJ)
+endif
+
+# **********************************************
+# Rules
+# **********************************************
+
+.PHONY : all
+all : $(IMAGE_REC) $(IMAGE_RAW) $(IMAGE_BIN)
+
+$(IMAGE_RAW) : $(IMAGE_TMP)
+	$(OBJDUMP) -s $(IMAGE_TMP) > $(IMAGE_RAW)
+
+$(IMAGE_TMP) : $(IMAGE_ELF)
+	$(OBJCOPY) -R .reginfo -R .data $(IMAGE_ELF) $(IMAGE_TMP)
+
+$(IMAGE_REC) : $(IMAGE_ELF)
+	$(OBJCOPY) -O srec $(IMAGE_ELF) $(IMAGE_REC)
+
+$(IMAGE_BIN): $(IMAGE_ELF)
+	$(OBJCOPY) -O binary $(IMAGE_ELF) $(IMAGE_BIN)
+
+$(IMAGE_ELF) : $(LST) $(OBJ) $(LIBFILE)
+	$(LD) $(LD_OPTS) $(OBJ) $(LIBFILE)
+
+ifeq ($(CPL_LIB),Y)
+vb_system.a : $(VB_SYSTEM_LIB_OBJ)
+	$(AR) $(AR_OPTS) $@ $^
+endif
+
+$(OBJ_C) : %.o : %.c
+	$(CC) $(CC_OPTS) -o $@ $<	
+
+$(OBJ_S) : %.o : %.S
+	$(CC) $(CC_OPTS_A) -o $@ $<
+
+$(LST_C) : %.lst : %.c
+	$(CC) $(CC_OPTS) -Wa,-alnhs=$(LSTDIR)/$@ $<
+	
+$(LST_S) : %.lst : %.S
+	$(CC) $(CC_OPTS_A) -Wa,-alnhs=$(LSTDIR)/$@ $<
+
+$(IMAGE_ELF) : $(LD_SCRIPT)
+$(OBJ) : ./Makefile
+
+.PHONY : clean depend
+
+clean :
+	rm -f *.o
+	rm -f $(LSTDIR)/*.lst
+	rm -f *.map
+	rm -f *.elf
+	rm -f *.rec
+	rm -f *.raw
+	rm -f *.tmp	
+	rm -f *.bin
+	rm -f *.mk
+ifeq ($(CPL_LIB),Y)
+	rm -f *.a
+endif
+
+depend :
+	$(CC) $(INCLUDE) -M $(SRC) > depend.mk
+
+
+-include depend.mk
+
+cleanc123456789:
+	rm -f $(filter-out $(BOOT_SRC), $(SYS_SRC_S))
+	rm -f $(filter-out $(CUSTOMER_SRC), $(SYS_SRC_C))
+	rm -f $(filter-out $(CUSTOMER_SRC), $(AUDIO_SRC_C))
+	rm -f $(filter-out $(CUSTOMER_SRC), $(AUDIO_SRC_S))
+	rm -f $(filter-out $(CUSTOMER_SRC), $(VIDEO_SRC_C))
+	rm -f $(filter-out $(CUSTOMER_SRC), $(VIDEO_SRC_S))
+	rm -f $(filter-out $(CUSTOMER_SRC), $(DVR_SRC_C))
+	rm -f $(filter-out $(CUSTOMER_SRC), $(DVR_SRC_S))	
+ifeq ($(VBDVR),N)
+	rm -f -r $(DVR_SRCDIR)
+endif	
