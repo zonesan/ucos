@@ -1,0 +1,43 @@
+Video Part:
+
+"p" shows mpeg decode output frames, but vsc do not accept the frames in time. There are three causes: 
+1. The display is disabled by users. 
+2. The rvo is disabled. The rvo is disabled has two causes: 
+	a. rvo is disabled by users; 
+	b. The decode output an invalid frame(for example, the frames size or the scale is not correct). 
+3. The frame rate input to vsc is higher than vout frame rate.
+
+"P" shows no new frame is sent to RVO. There are two causes: 
+1. No new frame is sent to the decode.
+2. The frame rate sent to the decode is lower than the display framerate.
+
+"D" shows the Linux-To-Ucos buffer(the buffer saves the address & length information) is full(it can contain information of just 8 frames) or not initialized. There are two causes: 
+1. The display task is not created. 
+2. Linux sends frames too soon. For example, linux sends over 8 frames to ucos once. 
+
+"$" shows the Ucos-To-Linux video buffer is full. For example, for QVGA, the buffer can contain maxium 13 frames. The cause is that Linux does not accept the frame by some reason.
+
+"+" shows that the mpeg encode does not finish when new Vin frame arrives. There are two causes.
+1. The Vin frame rate is too high, for example, 60 frames per second.
+2. The mpeg encode dies for some reason.
+
+Audio Part:
+
+  MC Error:
+    "^" shows MC audio in overflow.
+    "&" shows MC audio out underflow
+
+  Jitter Buffer Error: (XX is number)
+    "%!XX" showed by FetchPackData function, it means input packet size is not a multiple of size of long.
+    "&A!XX" showed by FetchPackData function, it means input packet data address is not begin with 0xA. 
+
+  Audio Task Error: (XX is number) 
+    "error! channel[XX] lwTalkerEnableBitFlag 0xXX not match with lwCurrentActiveTalkerCount 0xXX" shows talker count is not match with the talker which has been set codec.
+    "AI0" shows read  audio input, but return 0 size of data.
+
+  Two Risc Communication Error:
+    "(" shows Linux send tAudioTransferLinuxToUcos packet to uC/os, but channel ID error.
+    ")" shows Linux send tAudioTransferLinuxToUcos packet to uC/os, but talker ID error.
+
+For Video & Audio Part:
+"~" shows the ucos to linux stream buffer is full. The cause is that Linux does not read the stream in time.

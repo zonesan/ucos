@@ -1,0 +1,15 @@
+# 1. Config System: 
+#    TA1 - TA in VB1100; 
+#    TA2 - TA in VB2100;
+#    VIDEO_ONLY - IPCAM or IPCam & Display in VB2100;
+#    VIDEO_AUDIO - VideoPhone or IPCAM + audio in VB2100
+#    DVR - techwell2835 + video + audio in VB2100(include all the packages of VB2100)
+
+SYSTYPE = VIDEO_AUDIO
+
+# 2. Config to compile static library
+#   Y - this project will build static and the target binary file
+#   N - this project will use the static to build the binary file
+#       selet N is used to release the project to customer
+
+CPL_LIB = Y

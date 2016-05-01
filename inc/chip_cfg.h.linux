@@ -1,0 +1,82 @@
+/*
+***************************************************************************
+*                Copyright (c) 2005 vBridge Microsystem, Inc.  
+*                      Unpublished & Not for Publication
+*                            All Rights Reserved                   
+*   
+* File        :                      
+*                                                                         
+* Description :    
+*             
+* Date        : Oct 21, 2006                                                           
+***************************************************************************
+*/
+
+
+
+#ifndef __CHIP_CFG_H__
+#define __CHIP_CFG_H__
+
+
+
+/* single-cpu mode or dual-cpu mode */
+//#define    GNU_SIMULATOR
+#define    DEBUG
+
+#define PRINT_IN_TASK
+
+/* single-cpu mode or dual-cpu mode */
+//#define SINGLE_CPU_MODE
+#define DUAL_CPU_MODE
+
+#ifdef DUAL_CPU_MODE
+
+/* risc1 run ucos or linux*/
+//#define RISC1_UCOS
+#define RISC1_LINUX		        							
+
+        
+
+/* daisy-chain or non-daisy-chain */
+//#define DAISY_CHAIN
+
+/* ucos boot risc1 or not */
+#define UCOS_BOOT_RISC1    // risc1 will be booted by ucos . needed when run 1+1.
+
+#endif
+
+/* uart0 or uart1 */
+#define UART_CHANNEL    0x0
+
+/* risc1 entry */
+#define RISC1_ENTRY    0x900000
+//#define RISC1_ENTRY    0x20000
+
+
+/* chip or fpga */
+//#define FPGA
+#define CHIP
+
+/* cpu main clock */
+#ifdef FPGA
+#define CPU_MAIN_CLOCK    25000000
+#endif
+
+#ifdef CHIP
+#define CPU_MAIN_CLOCK    200000000
+#endif
+
+
+/* Audio Module Include */
+#ifdef VB_AUDIO      /* define in makefile */
+#define AUDIO_MODULE_INCLUDE
+#endif
+
+/* Video Module Include */
+#ifdef VB_VIDEO
+#define VIDEO_MODULE_INCLUDE
+#endif
+
+#endif
+
+

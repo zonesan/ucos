@@ -1,0 +1,87 @@
+Q&A
+
+1. Q: What's the checksum scheme of mpeg bitstream?
+A: The checksum is an unsigned integer and the sum of all of the word(4 bytes) in the bitstream. 
+The video data with checksum will be:
+the raw mpeg bitstream + the length of the bitstream(an unsigned integer, counted by bytes) +
+the checksum + the frame number(an unsigned integer)
+
+2. Q: How to compile to get the ucos bin files?
+A: First, make sure you have installed mips sde(under cygwin or linux)
+Second, change the dirctory to the "output". Then, press "make" and bin file will be created!
+Also, you can add your own files to the ucos project. If your files are about audio applications, please add them to "/application/audio".
+If your files are about video applications, please add them to "/application/video".
+You can also change the released C files. But please do not try to change the released H files. 
+Changing H files have no effects, because the H files have already been included by the released libraries before changed.
+One more point to remember, if you changed any files. Before "make", you should "make clean".
+
+3. Q: The ucos outputs too many information to the UART. How to mask the information?
+A: You can change the ucos code and re-compile to mask all the UART information. 
+    First, Change the function PrintSendString(in /drivers/printf.c) to:
+    
+void PrintSendString( int cnt, const char *pbString)
+{
+    return;
+}    
+    Second, Change the function CommInqSendString and CommInqSendStringAlways(in /drivers/comm.c) to:
+    
+int CommInqSendStringAlways(int ch, char *pbString)
+{
+    return 0;
+}    
+
+int CommInqSendString(int ch, char *pbString)
+{
+    return 0;
+}
+
+  Although you can mask the ucos UART information, but we do not recommend doing that.
+  
+4. Q: We use our own video encoder, NOT adv7171. How to modify the ucos code?
+A: You can write your own video encoder initialization function to replace HwADV7171Initialize(in /application/video/two_risc_display.c). 
+
+5. Q: We use our own video decoder, NOT adv7181. How to modify the ucos code?
+A: You can write your own video decoder initialization function to replace HwADV7181Initialize(in /application/video/two_risc_video.c).
+Plese note: the video decoder is only valid for analog sensor and the pcb of analog sensor is different from the digital one. 
+You can contact our hardware FAE for help.
+
+6. Q: We use different GPIOs as the iic SDA and SCL signal. How do we modify the ucos code?
+A: In /drivers/iic.h, there are definitions of SDA and SCL. For example, for vb2100 GPIO 12 is used as the SDA and GPIO 13 is used as the SCL. 
+You can change the definitions to meet your requirements. Please "make clean" before make after you change the iic.h.
+You can also rewrite the iic read and write functions.
+
+#define rIIC_SDA_BIT_SHIFT          12
+#define rIIC_SDA_DIR_BIT_SHIFT      12
+#define rIIC_SCL_BIT_SHIFT          13
+#define rIIC_SCL_DIR_BIT_SHIFT      13
+
+7. Q: We do not want the start-up picture. How to do?
+A: Please search the two_risc_system.c and find the following codes.
+
+#ifdef STARTUP_PICTURE
+
+    err = OSQPost(gptQMsgTwoRiscSystemMonitor, (void *)TWO_RISC_SYSTEM_OPEN_VOUT);
+    if(err != OS_NO_ERR)			
+        printf("\r\nRISC0: OSMboxPost error! err = %d!\r\n", err);				
+#endif
+
+  Modify the code to these:
+  
+#ifdef 0
+
+    err = OSQPost(gptQMsgTwoRiscSystemMonitor, (void *)TWO_RISC_SYSTEM_OPEN_VOUT);
+    if(err != OS_NO_ERR)			
+        printf("\r\nRISC0: OSMboxPost error! err = %d!\r\n", err);				
+#endif
+
+  Re-compile the project and there will be no start-up picture!
+  
+8. Q: We do not want PIP in start-up picrure.
+A: Search the function TaskTwoRiscDisplay in two_risc_display.c and find out "gPipEnable = 1". Change "gPipEnable = 1" to "gPipEnable = 0". 
+Then there will be no PIP in the start-up picture. You can use linux api to re-open the PIP.
+
+9. Q: How to change the backgroud color of the display?
+A: Search the function Video_VDE_RegInit() in /video/VSC_API.c and find out "VDE_FILL_COLOR = 0x80808000;". 
+Modify the assigned value of VDE_FILL_COLOR, you can get different background colors. 
+Bit 24 to 31 is the Y value; Bit 16 to 23 is the U value; Bit 8 to 15 is the V value. 
+For example, 0x55555500 is for green; 0x80808000 is for gray.
