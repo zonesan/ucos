@@ -170,15 +170,15 @@ exc_context:
       .space  8
 
 LEAF(uCOS_INTHandler)
-	la              k1,except_word
-      addiu           k1,k1,0x0010
-      lw              k0,0x0000(k1)
-      bne             k0,$0,2f
+	la              $k1,except_word
+      addiu           $k1,$k1,0x0010
+      lw              $k0,0x0000($k1)
+      bne             $k0,$0,2f
       nop
       eret           
       nop
 2:      
-      cache           21,0x0000(k1)
+      cache           21,0x0000($k1)
       nop      
 
       # store the interrupted task's context

@@ -91,7 +91,7 @@ static int CommInqSendStringAlways(int ch, char *pbString);
 static int  CommInqSendString (int ch, char *pbString);
 
 char *CommPutStringToBuf(char *start_addr, char *pbString);
-static int CommInqSendChar(int ch, char pbChar);
+int CommInqSendChar(int ch, char pbChar);
 
 char WaitPressKey(void);
 int CheckPressKey(char *receive);
